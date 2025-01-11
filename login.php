@@ -1,45 +1,42 @@
 <?php
 session_start();
+
 include "koneksi.php";
 
+if (isset($_SESSION['username'])) { 
+	header("location:admin.php"); 
+}
+
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-   
-    $username = $_POST['users'];
-    $password = md5($_POST['password']); 
-
-    
-    $stmt = $conn->prepare("SELECT username, password FROM users WHERE username=?");
-
+  $username = $_POST['username'];
   
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $hasil = $stmt->get_result();
+  $password = md5($_POST['password']);
 
-   
-    $row = $hasil->fetch_array(MYSQLI_ASSOC);
+  $stmt = $conn->prepare("SELECT username 
+                          FROM user 
+                          WHERE username=? AND password=?");
 
-    if ($row) {
-        
-        if ($password === $row['password']) {
-            $_SESSION['username'] = $row['username']; 
-            header("location:admin.php"); 
-        } else {
-           
-            $_SESSION['error_message'] = "Password salah. Silakan coba lagi.";
-            header("location:login.php");
-        }
-    } else {
-        
-        $_SESSION['error_message'] = "Username tidak ditemukan.";
-        header("location:login.php"); 
-    }
+  $stmt->bind_param("ss", $username, $password);//username string dan password string
+  
+  $stmt->execute();
+  
+  $hasil = $stmt->get_result();
+  
+  $row = $hasil->fetch_array(MYSQLI_ASSOC);
 
-   
-    $stmt->close();
-    $conn->close();
+  if (!empty($row)) {
+    $_SESSION['username'] = $row['username'];
+
+    header("location:admin.php");
+  } else {
+    header("location:login.php");
+  }
+
+  $stmt->close();
+  $conn->close();
 } else {
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -66,41 +63,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="card-body">
           <div class="text-center mb-3">
             <i class="bi bi-person-circle h1 display-4"></i>
-            <p>My Daily Journal</p>
+            <p>Welcome To My Daily Journal</p>
             <hr />
           </div>
-          <form method="post">
+          <form action="" method="post">
             <input
               type="text"
-              name="users"
-              id="username"
+              name="username"
               class="form-control my-4 py-2 rounded-4"
               placeholder="Username"
             />
             <input
               type="password"
               name="password"
-              id="password"
               class="form-control my-4 py-2 rounded-4"
               placeholder="Password"
             />
             <div class="text-center my-3 d-grid">
-              <button type="submit" class="btn btn-danger rounded-4">Login</button>
+              <button class="btn btn-danger rounded-4">Login</button>
             </div>
           </form>
-          <?php if (isset($_SESSION['error_message'])): ?>
-                <div class="alert alert-danger mt-3" role="alert">
-                  <?php 
-                    echo $_SESSION['error_message']; 
-                    unset($_SESSION['error_message']); 
-                  ?>
-                </div>
-              <?php endif; ?>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+
     <script
       src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
@@ -108,7 +97,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     ></script>
   </body>
 </html>
-
 <?php
 }
 ?>
